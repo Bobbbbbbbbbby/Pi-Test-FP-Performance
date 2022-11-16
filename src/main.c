@@ -4,44 +4,84 @@
 #include <stdlib.h>
 #include <time.h>
 
-extern long long myAtoI(char* a);
+extern long long myAtoI(char *a);
 extern void *calPi(void *i);
 
-long long STRENGTH;
+long long STRENGTH = 1000000;
 int THREAD_COUNT;
 pthread_mutex_t mutex;
 double sum;
 double delta;
 long long taskSize;
 
-int main(int argc, char *argv[])
-{
-    char* step = argv[1];
-    STRENGTH = myAtoI(step);  // strength means the pressure on the computer in this test
-    struct timespec start, end;
-    delta = 1.0 / (double)STRENGTH;
+void init();
+void runTest();
+void beforeTestInit();
+pthread_t pids[128];
+int firstTest = 1;
+int heavyLoadCounter;
+double scoreSum;
+double avg;
+struct timespec start, end;
+double score;
+double prevScore;
 
+int main()
+{
     THREAD_COUNT = sysconf(_SC_NPROCESSORS_ONLN);
-    taskSize = STRENGTH / THREAD_COUNT;
     pthread_mutex_init(&mutex, NULL);
 
-    pthread_t pids[128];
-    clock_gettime(CLOCK_REALTIME, &start);
+    while (firstTest || prevScore - score > 1 || score - prevScore > 1 || score < 1 || prevScore < 1 || end.tv_sec - start.tv_sec < 60)
+    {
+        beforeTestInit();
+        runTest();
 
-    for(int i = 0; i < THREAD_COUNT; i++)
+        if (end.tv_sec - start.tv_sec < 60)
+            STRENGTH *= 2;
+        else
+        {
+            heavyLoadCounter++;
+            scoreSum += score;
+            avg = scoreSum / (double)heavyLoadCounter;
+            if (score - avg < 1 && avg - score < 1 && heavyLoadCounter > 5)
+                break;
+        }
+        printf("pi: %.10lf\n", sum);
+        printf("score: %lf\n", score);
+    }
+    printf("---------------------------\n");
+    if (end.tv_sec - start.tv_sec < 120)
+        printf("final score: %lf\n", score);
+    else
+        printf("final score: %lf\n", avg);
+    return 0;
+}
+
+void runTest()
+{
+    clock_gettime(CLOCK_REALTIME, &start);
+    for (int i = 0; i < THREAD_COUNT; i++)
     {
         pthread_create(&pids[i], NULL, calPi, (void *)(long)i);
     }
-
     for (int i = 0; i < THREAD_COUNT; i++)
     {
         pthread_join(pids[i], NULL);
     }
     clock_gettime(CLOCK_REALTIME, &end);
-    long long timeSpent = end.tv_nsec - start.tv_nsec + 1000000000 * (end.tv_sec - start.tv_sec);
-    double score = (double)STRENGTH / (double)timeSpent * 100;
 
-    printf("pi: %.10lf\n", sum);
-    printf("score: %lf\n", score);
-    return 0;
+    long long timeSpent = end.tv_nsec - start.tv_nsec + 1000000000 * (end.tv_sec - start.tv_sec);
+    score = (double)STRENGTH / (double)timeSpent * 100;
+}
+
+void beforeTestInit()
+{
+    if (firstTest)
+        firstTest = 0;
+
+    prevScore = score;
+
+    sum = 0;
+    delta = 1.0 / (double)STRENGTH;
+    taskSize = STRENGTH / THREAD_COUNT;
 }

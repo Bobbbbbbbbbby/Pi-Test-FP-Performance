@@ -7,7 +7,6 @@ build: $(SRC)
 
 debug: $(SRC)
 	@$(CC) $(SRC) $(TAGS) -g
-	@gdb --args ./piTest 1000000
 
 run: build
 	@./piTest $(STRENGTH)

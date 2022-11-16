@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/Users/bobby/Source/C/pi/Pi-Test-FP-Performance",
+            "binaryPath": "/Users/bobby/Source/C/pi/Pi-Test-FP-Performance/piTest",
+            "binaryArgs": []
+        }
+    ]
+}
