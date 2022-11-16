@@ -25,18 +25,24 @@ double avg;
 struct timespec start, end;
 double score;
 double prevScore;
+double gap;
+long approxTime;
 
 int main()
 {
     THREAD_COUNT = sysconf(_SC_NPROCESSORS_ONLN);
     pthread_mutex_init(&mutex, NULL);
 
-    while (firstTest || prevScore - score > 1 || score - prevScore > 1 || score < 1 || prevScore < 1 || end.tv_sec - start.tv_sec < 60)
+    // approxTime is the approximate time of a test precedure
+    // gap is current test score - previous test score
+    while (firstTest || gap > 1 || gap < -1 || score < 1 || prevScore < 1 || approxTime < 60)
     {
         beforeTestInit();
         runTest();
+        approxTime = end.tv_sec - start.tv_sec;
+        
 
-        if (end.tv_sec - start.tv_sec < 60)
+        if (approxTime < 60)
             STRENGTH *= 2;
         else
         {
@@ -72,6 +78,7 @@ void runTest()
 
     long long timeSpent = end.tv_nsec - start.tv_nsec + 1000000000 * (end.tv_sec - start.tv_sec);
     score = (double)STRENGTH / (double)timeSpent * 100;
+    gap = score - prevScore;
 }
 
 void beforeTestInit()
