@@ -4,3 +4,7 @@
 ### Update Message
 Now able to:
 *Decide load by itself(**WARNING: __SUPER_HEAVY__**)*
+
+### How to Use
+Just:
+`make run`
